@@ -1,13 +1,13 @@
 // Next.js custom Express.js server example reference:
 // https://github.com/vercel/next.js/blob/a9f79980dbbbf7f3d3d40c151c97417232dea760/examples/custom-server-express/server.ts
-require("dotenv").config();
+import "dotenv/config";
 
-const cookieSession = require("cookie-session");
-const express = require("express");
-const helmet = require("helmet");
-const next = require("next");
-const passport = require("passport");
-const passportSaml = require("@node-saml/passport-saml");
+import cookieSession from "cookie-session";
+import express from "express";
+import helmet from "helmet";
+import next from "next";
+import passport from "passport";
+import { Profile, Strategy, VerifiedCallback } from "@node-saml/passport-saml";
 
 const PORT = 3000;
 const dev = process.env.NODE_ENV !== "production";
@@ -26,7 +26,7 @@ passport.deserializeUser((user, done) => {
 });
 
 // SAML strategy for passport -- Single IDP
-const strategy = new passportSaml.Strategy(
+const strategy = new Strategy(
   {
     entryPoint: process.env.SSO_ENTRYPOINT,
     issuer: process.env.SSO_ISSUER,
@@ -35,7 +35,8 @@ const strategy = new passportSaml.Strategy(
     // wantAssertionsSigned: false, // less secure way to avoid "Invalid signature" error
     // audience: process.env.SSO_ISSUER, // the default for `audience` is the value of `issuer`. Can be set to `false` to disable audience verification.
   },
-  (profile, done) => done(null, profile),
+  (profile: Profile, done: VerifiedCallback) => done(null, profile),
+  (profile: Profile, done: VerifiedCallback) => done(null, profile),
 );
 
 passport.use(strategy);
@@ -77,16 +78,19 @@ app.prepare().then(() => {
   // This is the callback URL
   // https://www.antoniogioia.com/saml-sso-setup-with-express-and-passport/
   server.post("/login/sso/callback", (req, res) => {
-    passport.authenticate("saml", (err, user) => {
-      if (err) {
-        console.error("app.js, /login/sso/callback, err", err);
-      }
-      console.log("samlAuthRouter.js, /login/sso/callback, user", user);
+    passport.authenticate(
+      "saml",
+      (err: any, user?: Express.User | false | null) => {
+        if (err) {
+          console.error("app.js, /login/sso/callback, err", err);
+        }
+        console.log("samlAuthRouter.js, /login/sso/callback, user", user);
 
-      // store user in cookie-based session
-      req.session.user = user;
-      res.redirect("/");
-    })(req, res);
+        // store user in cookie-based session
+        req.session.user = user;
+        res.redirect("/");
+      },
+    )(req, res);
   });
 
   // All other requests are sent to Next.js handler
@@ -99,8 +103,7 @@ app.prepare().then(() => {
   });
 
   // Start the HTTP server listening for connections
-  server.listen(PORT, (err) => {
-    if (err) throw err;
+  server.listen(PORT, () => {
     console.info(`> Ready on http://localhost:${PORT}`);
   });
 });
