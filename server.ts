@@ -6,8 +6,7 @@ import cookieSession from "cookie-session";
 import express from "express";
 import helmet from "helmet";
 import next from "next";
-import passport from "passport";
-import { Profile, Strategy, VerifiedCallback } from "@node-saml/passport-saml";
+import { SAML } from "@node-saml/node-saml";
 
 const PORT = 3000;
 const dev = process.env.NODE_ENV !== "production";
@@ -15,31 +14,16 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 /**
- * Passport.js
+ * node-saml
  */
-passport.serializeUser((user, done) => {
-  done(null, user);
+const saml = new SAML({
+  callbackUrl: process.env.SSO_CALLBACK_URL,
+  entryPoint: process.env.SSO_ENTRYPOINT,
+  idpCert: process.env.SSO_CERT,
+  issuer: process.env.SSO_ISSUER,
+  // wantAssertionsSigned: false, // less secure way to avoid "Invalid signature" error
+  // audience: process.env.SSO_ISSUER, // the default for `audience` is the value of `issuer`. Can be set to `false` to disable audience verification.
 });
-
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
-
-// SAML strategy for passport -- Single IDP
-const strategy = new Strategy(
-  {
-    entryPoint: process.env.SSO_ENTRYPOINT,
-    issuer: process.env.SSO_ISSUER,
-    callbackUrl: process.env.SSO_CALLBACK_URL,
-    idpCert: process.env.SSO_CERT,
-    // wantAssertionsSigned: false, // less secure way to avoid "Invalid signature" error
-    // audience: process.env.SSO_ISSUER, // the default for `audience` is the value of `issuer`. Can be set to `false` to disable audience verification.
-  },
-  (profile: Profile, done: VerifiedCallback) => done(null, profile),
-  (profile: Profile, done: VerifiedCallback) => done(null, profile),
-);
-
-passport.use(strategy);
 
 /**
  * Next.js app
@@ -61,36 +45,36 @@ app.prepare().then(() => {
       contentSecurityPolicy: false,
     }),
   );
-  server.use(passport.initialize());
-  server.use(passport.session());
 
   // This Route Authenticates req with IDP
   // If Session is active it returns saml response
   // If Session is not active it redirects to IDP's login form
-  server.get(
-    process.env.SSO_LOGIN_PATH,
-    passport.authenticate("saml", {
-      successRedirect: "/",
-      failureRedirect: process.env.SSO_LOGIN_PATH,
-    }),
-  );
+  server.get(process.env.SSO_LOGIN_PATH, async (req, res) => {
+    try {
+      const host = req.headers.host;
+      const RelayState = req.query.RelayState || req.body.RelayState;
+      const authorizedUrl = await saml.getAuthorizeUrlAsync(
+        RelayState,
+        host,
+        {},
+      );
+      res.redirect(authorizedUrl);
+    } catch (err) {
+      res.status(500).send("Error initiating SAML login");
+    }
+  });
 
   // This is the callback URL
-  // https://www.antoniogioia.com/saml-sso-setup-with-express-and-passport/
-  server.post("/login/sso/callback", (req, res) => {
-    passport.authenticate(
-      "saml",
-      (err: any, user?: Express.User | false | null) => {
-        if (err) {
-          console.error("app.js, /login/sso/callback, err", err);
-        }
-        console.log("samlAuthRouter.js, /login/sso/callback, user", user);
-
-        // store user in cookie-based session
-        req.session.user = user;
-        res.redirect("/");
-      },
-    )(req, res);
+  server.post("/login/sso/callback", async (req, res) => {
+    try {
+      const { profile } = await saml.validatePostResponseAsync(req.body);
+      console.log("index.ts, /login/sso/callback, profile", profile);
+      req.session.user = profile;
+      res.redirect("/");
+    } catch (err) {
+      console.error(err);
+      res.status(401).send("Error validating SAML response");
+    }
   });
 
   // All other requests are sent to Next.js handler

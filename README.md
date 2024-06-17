@@ -1,6 +1,6 @@
 # next-rsc-saml-example
 
-Example Next.js, Passport.js app with OneLogin SAML SSO authentication.
+Example Next.js app with OneLogin SAML SSO authentication.
 
 ## OneLogin configuration
 
