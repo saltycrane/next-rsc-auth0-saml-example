@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+import { SSO_COOKIE_NAME } from "./constants";
 import invariant from "./invariant";
 
 /**
@@ -61,16 +62,16 @@ export async function login(user: TUser) {
   const session = await encrypt({ user, expires });
 
   // Save the session in a cookie
-  cookies().set("session", session, { expires, httpOnly: true });
+  cookies().set(SSO_COOKIE_NAME, session, { expires, httpOnly: true });
 }
 
 export async function logout() {
   // Destroy the session
-  cookies().set("session", "", { expires: new Date(0) });
+  cookies().set(SSO_COOKIE_NAME, "", { expires: new Date(0) });
 }
 
 export async function getSession(): Promise<TSession | null> {
-  const session = cookies().get("session")?.value;
+  const session = cookies().get(SSO_COOKIE_NAME)?.value;
   if (!session) {
     return null;
   }
@@ -78,7 +79,7 @@ export async function getSession(): Promise<TSession | null> {
 }
 
 export async function updateSession(request: NextRequest) {
-  const session = request.cookies.get("session")?.value;
+  const session = request.cookies.get(SSO_COOKIE_NAME)?.value;
   if (!session) return;
 
   // Refresh the session so it doesn't expire
@@ -86,7 +87,7 @@ export async function updateSession(request: NextRequest) {
   parsed.expires = new Date(Date.now() + 10 * 1000);
   const res = NextResponse.next();
   res.cookies.set({
-    name: "session",
+    name: SSO_COOKIE_NAME,
     value: await encrypt(parsed),
     httpOnly: true,
     expires: parsed.expires,

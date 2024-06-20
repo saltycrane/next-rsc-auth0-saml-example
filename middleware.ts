@@ -1,15 +1,14 @@
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
-import invariant from "./invariant";
+import { SSO_COOKIE_NAME } from "./constants";
 
 export async function middleware(request: NextRequest) {
   // If not logged in **and not one of the URLs used for logging in**,
   // then redirect to the login URL.
-  const session = cookies().get("session")?.value;
+  const session = cookies().get(SSO_COOKIE_NAME)?.value;
   if (!session && !request.nextUrl.pathname.startsWith("/login/sso")) {
-    invariant(process.env.SSO_LOGIN_PATH, "SSO_LOGIN_PATH must be set");
-    return Response.redirect(new URL(process.env.SSO_LOGIN_PATH, request.url));
+    return Response.redirect(new URL("/login/sso", request.url));
   }
 }
 
