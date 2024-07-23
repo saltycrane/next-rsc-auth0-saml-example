@@ -11,9 +11,8 @@ export async function POST(request: NextRequest) {
     if (!profile) {
       return new Response("No user profile in SAML response", { status: 401 });
     }
-    login({ email: profile.nameID });
+    login(profile);
   } catch (err) {
-    console.error(err);
     return new Response("Error validating SAML response", { status: 401 });
   }
   // `redirect` internally throws an error so it should be called outside

@@ -18,8 +18,10 @@ export const saml = new SAML({
   entryPoint: process.env.SSO_ENTRYPOINT,
   idpCert: process.env.SSO_CERT,
   issuer: process.env.SSO_ISSUER,
-  // wantAssertionsSigned: false, // less secure way to avoid "Invalid signature" error
-  // audience: process.env.SSO_ISSUER, // the default for `audience` is the value of `issuer`. Can be set to `false` to disable audience verification.
+  // use these 2 signing options when Auth0 is configured with `signResponse: false` (the default)
+  wantAssertionsSigned: true,
+  wantAuthnResponseSigned: false,
+  // audience: process.env.SSO_ISSUER,  // the default for `audience` is the value of `issuer`. Can be set to `false` to disable audience verification.
 });
 
 /**
@@ -52,9 +54,7 @@ type TSession = {
   user: TUser;
 };
 
-type TUser = {
-  email: string;
-};
+type TUser = Record<string, any>;
 
 export async function login(user: TUser) {
   // Create the session
