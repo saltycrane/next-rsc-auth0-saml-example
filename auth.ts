@@ -9,12 +9,17 @@ import invariant from "./invariant";
 /**
  * saml
  */
-invariant(process.env.SSO_CALLBACK_URL, "SSO_CALLBACK_URL must be set");
+invariant(process.env.SSO_CALLBACK_PATH, "SSO_CALLBACK_PATH must be set");
 invariant(process.env.SSO_CERT, "SSO_CERT must be set");
+invariant(
+  process.env.SSO_COOKIE_SESSION_SECRET,
+  "SSO_COOKIE_SESSION_SECRET must be set",
+);
+invariant(process.env.SSO_ENTRYPOINT, "SSO_ENTRYPOINT must be set");
 invariant(process.env.SSO_ISSUER, "SSO_ISSUER must be set");
 
 export const saml = new SAML({
-  callbackUrl: process.env.SSO_CALLBACK_URL,
+  callbackUrl: process.env.SSO_CALLBACK_PATH,
   entryPoint: process.env.SSO_ENTRYPOINT,
   idpCert: process.env.SSO_CERT,
   issuer: process.env.SSO_ISSUER,

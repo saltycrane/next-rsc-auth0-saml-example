@@ -30,7 +30,7 @@ See the [`passport-saml` source code](https://github.com/node-saml/passport-saml
   - `SSO_ISSUER`: "Default App" > "Addons" > "SAML2 WEB APP" > "Usage" > "Issuer"
   - `SSO_COOKIE_SESSION_SECRET`: generate or make up a secret string
 
-Note: `SSO_CALLBACK_URL` should be the same as the value entered for "Default App" > "Addons" > "SAML2 WEB APP" > "Settings" > "Application Callback URL"
+Note: `SSO_CALLBACK_PATH` should be the same as the value entered for "Default App" > "Addons" > "SAML2 WEB APP" > "Settings" > "Application Callback URL" (with or without the domain).
 
 **Example `.env`**
 
@@ -39,7 +39,7 @@ SSO_ENTRYPOINT="https://dev-xxxxxxxx.us.auth0.com/samlp/xxxxxxxxxxxxxxxxxxxxxxxx
 
 SSO_ISSUER="urn:dev-xxxxxxxx.us.auth0.com"
 
-SSO_CALLBACK_URL="http://localhost:3000/login/sso/callback"
+SSO_CALLBACK_PATH="/login/sso/callback"
 
 SSO_CERT="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -80,7 +80,7 @@ Go to http://localhost:3000 in the browser
 
 ## Signing options
 
-The signing options in `@node-saml/node-saml` needs to match the signing options configured in Auth0. See this table below:
+The signing options in `@node-saml/node-saml` need to match the signing options configured in Auth0. See this table below:
 
     | `node-saml`            | `node-saml`               | Auth0                  |
     | `wantAssertionsSigned` | `wantAuthnResponseSigned` | `signResponse`         |
